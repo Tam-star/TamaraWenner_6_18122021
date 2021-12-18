@@ -42,6 +42,11 @@ exports.modifySauce = (req, res, next) => {
 
 
 exports.deleteSauce = (req, res, next) => {
+
+    //Gère le CastError si quelqu'un essaie d'inventer un id qui ne peut pas correspondre à l'ObjectId de MongoDB
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+        return res.status(404).json({ error: 'Wrong id' })
+    }
     Sauce.findOne({ _id: req.params.id }).then(
         sauce => {
             if (!sauce) {
