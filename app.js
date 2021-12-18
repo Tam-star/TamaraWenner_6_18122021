@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 const sauceRoutes = require('./routes/sauce');
-// const userRoutes = require('./routes/user');
+const userRoutes = require('./routes/user');
 
 const app = express();
 mongoose.connect('mongodb+srv://tamstar:KgcGxLrP48npAnb@cluster0.yblcq.mongodb.net/PiiquanteDatabase?retryWrites=true&w=majority',
@@ -23,6 +23,6 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/sauces', sauceRoutes);
-// app.use('/api/auth', userRoutes);
+app.use('/api/auth', userRoutes);
 
 module.exports = app;
