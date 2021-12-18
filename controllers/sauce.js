@@ -45,16 +45,13 @@ exports.deleteSauce = (req, res, next) => {
     Sauce.findOne({ _id: req.params.id }).then(
         sauce => {
             if (!sauce) {
-                res.status(404).json({
-                    error: new Error('Sauce non trouvée')
-                })
+                return res.status(401).json({ error: 'Cette sauce n\'existe pas' })
             }//On récupère le userId créé dans le middleware auth
             if (sauce.userId !== req.auth.userId) {
-                res.status(401).json({
-                    error: new Error('Requête non autorisée')
-                })
+                return res.status(403).json({ error: 'Requête non autorisée' })
             }
             const filename = sauce.imageUrl.split('/images/')[1]
+            console.log('continue apres')
             fs.unlink(`images/${filename}`, () => {
                 Sauce.deleteOne({ _id: req.params.id })
                     .then(() => res.status(200).json({ message: 'Sauce supprimée !' }))
@@ -62,8 +59,12 @@ exports.deleteSauce = (req, res, next) => {
             })
 
         }
-    )
+    ).catch(error => {
+        console.log("Erreur  : " + error)
+        res.status(500).json("Erreur du serveur")
 
+
+    })
 };
 
 
