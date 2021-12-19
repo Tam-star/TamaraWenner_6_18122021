@@ -6,6 +6,7 @@ const userSchema = mongoose.Schema({
     password: { type: String, required: true }
 })
 
+//Vérifie l'unicité de l'email
 userSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('User', userSchema)
