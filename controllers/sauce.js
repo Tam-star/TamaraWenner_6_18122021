@@ -102,8 +102,9 @@ exports.deleteSauce = (req, res, next) => {
 
 
 exports.updateLikeSauce = (req, res, next) => {
-    //Check that request has a userID and a like elements
-    if (!req.body.userId || !req.body.like) {
+    //Check that request has a userID 
+    if(!req.body.userId)
+    {
         return res.status(400).json({ error: 'Invalid request' })
     }
     //Catch CastError
