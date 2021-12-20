@@ -19,7 +19,6 @@ const sauceSchema = mongoose.Schema({
 
 
 function arrayLimit(array) {
-    console.log(array.length)
     return array.length === 0 ;
   }
 
