@@ -1,11 +1,18 @@
-require('dotenv').config()
-
 const express = require('express');
-const helmet = require("helmet");
-const morgan = require('morgan');
 const mongoose = require('mongoose');
 const path = require('path');
 
+//For security
+require('dotenv').config()
+const helmet = require("helmet");
+const mongoSanitize = require('express-mongo-sanitize');
+
+//For development
+const morgan = require('morgan');
+
+
+
+//Routes
 const sauceRoutes = require('./routes/sauce');
 const userRoutes = require('./routes/user');
 
@@ -19,9 +26,9 @@ mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD
     })
     .then(() => console.log('Connexion à MongoDB réusie !'))
     .catch(() => console.log('Connexion à MongoDB échouée !'))
+
+
 app.use(express.json());
-
-
 app.use(helmet());
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,6 +38,8 @@ app.use((req, res, next) => {
 });
 
 
+
+app.use(mongoSanitize());   // Remove all keys containing prohibited characters
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);
