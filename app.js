@@ -5,11 +5,10 @@ const path = require('path');
 //For security
 require('dotenv').config()
 const helmet = require("helmet");
-const mongoSanitize = require('express-mongo-sanitize');
+const expressMongoSanitize = require('express-mongo-sanitize');
 
 //For development
 const morgan = require('morgan');
-
 
 
 //Routes
@@ -39,7 +38,7 @@ app.use((req, res, next) => {
 
 
 
-app.use(mongoSanitize());   // Remove all keys containing prohibited characters
+app.use(expressMongoSanitize());   // Remove all keys containing prohibited characters
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);

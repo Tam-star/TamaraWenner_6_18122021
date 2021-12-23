@@ -4,13 +4,13 @@ const fs = require('fs');
 exports.getAllSauces = (req, res, next) => {
     Sauce.find()
         .then(sauces => res.status(200).json(sauces))
-        .catch(error => res.status(400).json({ error }))
+        .catch(error => res.status(400).json("Bad request : " + error.message))
 };
 
 exports.getOneSauce = (req, res, next) => {
     Sauce.findOne({ _id: req.params.id })
         .then(sauce => res.status(200).json(sauce))
-        .catch(error => res.status(404).json({ error }));
+        .catch(error => res.status(404).json("Bad request : " + error.message));
 };
 
 
@@ -36,47 +36,36 @@ exports.createSauce = (req, res, next) => {
 
 
 exports.modifySauce = (req, res, next) => {
-    try {
-        //Catch CastError
-        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            return res.status(404).json({ error: 'Wrong id' })
-        }
-        //Prevent someone from changing its likes 
-        if (req.body.likes || req.body.dislikes || req.body.usersLiked || req.body.usersDisliked) {
-            return res.status(403).json({ error: 'Forbidden request' })
-        }
-        Sauce.findOne({ _id: req.params.id })
-            .then(sauce => {
-                if (!sauce) {
-                    return res.status(404).json({ error: 'Wrong id' })
-                }
-                //Get the userId created in the middleware auth and compare it to the userId of the person who created the sauce
-                if (sauce.userId !== req.auth.userId) {
-                    return res.status(403).json({ error: 'Forbidden request' })
-                }
-                const sauceObject = req.file ? {
-                    ...JSON.parse(req.body.sauce),
-                    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-                } : { ...req.body }
 
-                Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'The sauce has been modified !' }))
-                    .catch(error => res.status(400).json({ error }));
-            })
-            .catch(error => res.status(400).json("Bad request"))
-    } catch (e) {
-        return res.status(500).json({ message: e.message })
+    if (req.body.likes || req.body.dislikes || req.body.usersLiked || req.body.usersDisliked) {
+        return res.status(403).json({ error: 'Forbidden request' })
     }
+    Sauce.findOne({ _id: req.params.id })
+        .then(sauce => {
+            if (!sauce) {
+                return res.status(404).json({ error: 'Wrong id' })
+            }
+            //Get the userId created in the middleware auth and compare it to the userId of the person who created the sauce
+            if (sauce.userId !== req.auth.userId) {
+                return res.status(403).json({ error: 'Forbidden request' })
+            }
+            const sauceObject = req.file ? {
+                ...JSON.parse(req.body.sauce),
+                imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+            } : { ...req.body }
+
+            Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
+                .then(() => res.status(200).json({ message: 'The sauce has been modified !' }))
+                .catch(error => res.status(400).json({ error }));
+        })
+        .catch(error => res.status(400).json("Bad request : " + error.message))
+
 
 };
 
 
 exports.deleteSauce = (req, res, next) => {
 
-    //Catch CastError if someone tries to invent an id which cannot be a MongoDB ObjectId 
-    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-        return res.status(404).json({ error: 'Wrong id' })
-    }
     Sauce.findOne({ _id: req.params.id }).then(
         sauce => {
             if (!sauce) {
@@ -103,13 +92,8 @@ exports.deleteSauce = (req, res, next) => {
 
 exports.updateLikeSauce = (req, res, next) => {
     //Check that request has a userID 
-    if(!req.body.userId)
-    {
+    if (!req.body.userId) {
         return res.status(400).json({ error: 'Invalid request' })
-    }
-    //Catch CastError
-    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-        return res.status(404).json({ error: 'Wrong id' })
     }
     let userId = req.body.userId
 
@@ -220,7 +204,7 @@ exports.updateLikeSauce = (req, res, next) => {
             }
 
         }
-        ).catch(error => res.status(400).json('Bad request') )
+        ).catch(error => res.status(400).json('Bad request'))
 
 }
 
