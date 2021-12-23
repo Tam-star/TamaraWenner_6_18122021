@@ -1,3 +1,4 @@
+const mongoSanitize = require('express-mongo-sanitize');
 const Sauce = require('../models/sauce');
 const fs = require('fs');
 
@@ -18,6 +19,11 @@ exports.createSauce = (req, res, next) => {
     try {
         const sauceObject = JSON.parse(req.body.sauce)
         delete sauceObject._id;
+        //Replace '$' and '.' in keys to avoid NoSQL injections
+        mongoSanitize.sanitize(sauceObject, {
+            replaceWith: '_'
+        });
+        console.log("post sanitize : " + JSON.stringify(sauceObject))
         const sauce = new Sauce({
             ...sauceObject,
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
@@ -26,13 +32,11 @@ exports.createSauce = (req, res, next) => {
             .then(() => res.status(201)
                 .json({ message: 'You added a sauce !' }))
             .catch(error => res.status(400).json({ error }))
-        console.log(req.body);
     } catch (e) {
         return res.status(500).json({ message: e.message })
     }
 
 };
-
 
 
 exports.modifySauce = (req, res, next) => {
@@ -49,10 +53,17 @@ exports.modifySauce = (req, res, next) => {
             if (sauce.userId !== req.auth.userId) {
                 return res.status(403).json({ error: 'Forbidden request' })
             }
+
             const sauceObject = req.file ? {
-                ...JSON.parse(req.body.sauce),
+                ...mongoSanitize.sanitize(JSON.parse(req.body.sauce), {
+                    replaceWith: '_'
+                }),
                 imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-            } : { ...req.body }
+            } : {
+                ...mongoSanitize.sanitize(req.body, {
+                    replaceWith: '_'
+                })
+            }
 
             Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
                 .then(() => res.status(200).json({ message: 'The sauce has been modified !' }))
