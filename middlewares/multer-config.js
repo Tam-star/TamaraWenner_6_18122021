@@ -9,7 +9,7 @@ const MIME_TYPES = {
 const uploadFilter = function (req, file, cb) {
     const extension = MIME_TYPES[file.mimetype]
     if (extension === 'png' || extension === 'jpg') {
-        cb(null, true)   
+        cb(null, true)
     }
     else {
         cb('This is not a valid image', false)
@@ -28,4 +28,4 @@ const storage = multer.diskStorage({
     }
 })
 
-module.exports = multer({ storage : storage, fileFilter : uploadFilter }).single('image')
+module.exports = multer({ storage: storage, fileFilter: uploadFilter }).single('image')
