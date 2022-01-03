@@ -1,17 +1,28 @@
 const mongoSanitize = require('express-mongo-sanitize');
 const Sauce = require('../models/sauce');
+const mongoose = require('mongoose');
 const fs = require('fs');
 
 exports.getAllSauces = (req, res, next) => {
     Sauce.find()
         .then(sauces => res.status(200).json(sauces))
-        .catch(error => res.status(400).json("Bad request : " + error.message))
+        .catch(error => res.status(500).json(error.message))
 };
 
 exports.getOneSauce = (req, res, next) => {
     Sauce.findOne({ _id: req.params.id })
-        .then(sauce => res.status(200).json(sauce))
-        .catch(error => res.status(404).json("Bad request : " + error.message));
+        .then(sauce => {
+            if (!sauce) {
+                return res.status(404).json({ error: 'Wrong id' })
+            }
+            res.status(200).json(sauce)
+        })
+        .catch(error => {
+            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+                return res.status(404).json({ error: 'Wrong id' })
+            }
+            res.status(500).json(error.message)
+        });
 };
 
 
@@ -23,7 +34,6 @@ exports.createSauce = (req, res, next) => {
         mongoSanitize.sanitize(sauceObject, {
             replaceWith: '_'
         });
-        console.log("post sanitize : " + JSON.stringify(sauceObject))
         const sauce = new Sauce({
             ...sauceObject,
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
@@ -31,7 +41,7 @@ exports.createSauce = (req, res, next) => {
         sauce.save()
             .then(() => res.status(201)
                 .json({ message: 'You added a sauce !' }))
-            .catch(error => res.status(400).json({ error }))
+            .catch(error => res.status(500).json({ error: error.message }))
     } catch (e) {
         return res.status(500).json({ message: e.message })
     }
@@ -67,9 +77,14 @@ exports.modifySauce = (req, res, next) => {
 
             Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
                 .then(() => res.status(200).json({ message: 'The sauce has been modified !' }))
-                .catch(error => res.status(400).json({ error }));
+                .catch(error => res.status(500).json({ error }));
         })
-        .catch(error => res.status(400).json("Bad request : " + error.message))
+        .catch(error => {
+            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+                return res.status(404).json({ error: 'Wrong id' })
+            }
+            res.status(500).json({ error: error.message })
+        })
 
 
 };
@@ -90,13 +105,15 @@ exports.deleteSauce = (req, res, next) => {
             fs.unlink(`images/${filename}`, () => {
                 Sauce.deleteOne({ _id: req.params.id })
                     .then(() => res.status(200).json({ message: 'Deleted sauce !' }))
-                    .catch(error => res.status(400).json({ error }));
+                    .catch(error => res.status(500).json({ error: error.message }));
             })
 
         }
     ).catch(error => {
-        console.log("Error  : " + error)
-        res.status(400).json("Bad request")
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ error: 'Wrong id' })
+        }
+        res.status(500).json({ error: error.message })
     })
 };
 
@@ -132,7 +149,7 @@ exports.updateLikeSauce = (req, res, next) => {
                         }
                     )
                         .then(() => res.status(200).json({ message: 'Like added ! It seems you changed your mind' }))
-                        .catch(error => res.status(400).json({ error }));
+                        .catch(error => res.status(500).json({  error: error.message  }));
                 }
                 //The user did not vote on like or dislike before
                 else {
@@ -145,7 +162,7 @@ exports.updateLikeSauce = (req, res, next) => {
                         }
                     )
                         .then(() => res.status(200).json({ message: 'Like added' }))
-                        .catch(error => res.status(400).json({ error }));
+                        .catch(error => res.status(500).json({  error: error.message  }));
                 }
 
             }
@@ -160,7 +177,7 @@ exports.updateLikeSauce = (req, res, next) => {
                         $inc: { likes: -1 }
                     })
                         .then(() => res.status(200).json({ message: 'Like removed' }))
-                        .catch(error => res.status(400).json({ error }));
+                        .catch(error => res.status(500).json({  error: error.message  }));
                 }
                 //The user cancel his dislike
                 else if (sauce.usersDisliked.includes(userId)) {
@@ -171,7 +188,7 @@ exports.updateLikeSauce = (req, res, next) => {
                         $inc: { dislikes: -1 }
                     })
                         .then(() => res.status(200).json({ message: 'Dislike removed' }))
-                        .catch(error => res.status(400).json({ error }));
+                        .catch(error => res.status(500).json({  error: error.message  }));
                 }
                 else {
                     res.status(208).json({ message: 'No changes' })
@@ -194,7 +211,7 @@ exports.updateLikeSauce = (req, res, next) => {
                         }
                     )
                         .then(() => res.status(200).json({ message: 'Dislike added ! It seems you changed your mind' }))
-                        .catch(error => res.status(400).json({ error }));
+                        .catch(error => res.status(500).json({  error: error.message  }));
                 }
                 //The user did not like nor dislike the sauce before
                 else {
@@ -207,7 +224,7 @@ exports.updateLikeSauce = (req, res, next) => {
                         }
                     )
                         .then(() => res.status(200).json({ message: 'Dislike added !' }))
-                        .catch(error => res.status(400).json({ error }));
+                        .catch(error => res.status(500).json({  error: error.message  }));
                 }
             }
             else {
@@ -215,7 +232,7 @@ exports.updateLikeSauce = (req, res, next) => {
             }
 
         }
-        ).catch(error => res.status(400).json('Bad request'))
+        ).catch(error => res.status(500).json({ error: error.message }))
 
 }
 
